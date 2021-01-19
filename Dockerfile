@@ -10,10 +10,11 @@ RUN apt-get update && \
 
 RUN npm install -g bids-validator@0.19.2
 
-# Download FreeSurfer
+# Download FreeSurfer 6.0.1
 RUN apt-get -y update \
     && apt-get install -y wget && \
-    wget -qO- ftp://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/5.3.0-HCP/freesurfer-Linux-centos4_x86_64-stable-pub-v5.3.0-HCP.tar.gz | tar zxv -C /opt \
+    wget -qO- https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/6.0.1/freesurfer-Linux-centos6_x86_64-stable-pub-v6.0.1.tar.gz \
+    | tar zxv -C /opt \
     --exclude='freesurfer/trctrain' \
     --exclude='freesurfer/subjects/fsaverage_sym' \
     --exclude='freesurfer/subjects/fsaverage3' \
@@ -47,27 +48,22 @@ ENV PERL5LIB /opt/freesurfer/mni/lib/perl5/5.8.5
 ENV MNI_PERL5LIB /opt/freesurfer/mni/lib/perl5/5.8.5
 ENV PATH /opt/freesurfer/bin:/opt/freesurfer/fsfast/bin:/opt/freesurfer/tktools:/opt/freesurfer/mni/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
 
-# Install FSL 5.0.9
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl && \
-    curl -sSL http://neuro.debian.net/lists/trusty.us-ca.full >> /etc/apt/sources.list.d/neurodebian.sources.list && \
-    apt-key adv --recv-keys --keyserver hkp://pgp.mit.edu:80 0xA5D32F012649A5A9 && \
-    apt-get update && \
-    apt-get install -y fsl-core=5.0.9-4~nd14.04+1
+# Install FSL 6.0.2
+RUN curl https://fsl.fmrib.ox.ac.uk/fsldownloads/fsl-6.0.2-centos6_64.tar.gz \
+         | tar -xz -C /usr/local && \
+          /usr/local/fsl/etc/fslconf/fslpython_install.sh -f /usr/local/fsl
 
 # Configure environment
-ENV FSLDIR=/usr/share/fsl/5.0
-ENV FSL_DIR="${FSLDIR}"
-ENV FSLOUTPUTTYPE=NIFTI_GZ
-ENV PATH=/usr/lib/fsl/5.0:$PATH
-ENV FSLMULTIFILEQUIT=TRUE
-ENV POSSUMDIR=/usr/share/fsl/5.0
-ENV LD_LIBRARY_PATH=/usr/lib/fsl/5.0:$LD_LIBRARY_PATH
-ENV FSLTCLSH=/usr/bin/tclsh
-ENV FSLWISH=/usr/bin/wish
-ENV FSLOUTPUTTYPE=NIFTI_GZ
-RUN echo "cHJpbnRmICJrcnp5c3p0b2YuZ29yZ29sZXdza2lAZ21haWwuY29tXG41MTcyXG4gKkN2dW12RVYzelRmZ1xuRlM1Si8yYzFhZ2c0RVxuIiA+IC9vcHQvZnJlZXN1cmZlci9saWNlbnNlLnR4dAo=" | base64 -d | sh
-
+ENV FSLDIR=/usr/local/fsl
+ENV FSL_DIR="${FSLDIR}" \
+    FSLOUTPUTTYPE=NIFTI_GZ \
+    PATH=${FSLDIR}/bin:$PATH \
+    FSLMULTIFILEQUIT=TRUE \
+    POSSUMDIR=${FSLDIR} \
+    LD_LIBRARY_PATH=${FSLDIR}/lib:$LD_LIBRARY_PATH \
+    FSLTCLSH=/usr/bin/tclsh \
+    FSLWISH=/usr/bin/wish \
+    FSLOUTPUTTYPE=NIFTI_GZ
 # Install Connectome Workbench
 RUN apt-get update && apt-get -y install connectome-workbench=1.2.3-1~nd14.04+1
 
@@ -76,7 +72,7 @@ ENV CARET7DIR=/usr/bin
 # Install HCP Pipelines
 RUN apt-get -y update \
     && apt-get install -y --no-install-recommends python-numpy && \
-    wget https://github.com/Washington-University/Pipelines/archive/v3.17.0.tar.gz -O pipelines.tar.gz && \
+    wget https://github.com/Washington-University/Pipelines/archive/v4.3.0-rc.3.tar.gz -O pipelines.tar.gz && \
     cd /opt/ && \
     tar zxvf /pipelines.tar.gz && \
     mv /opt/Pipelines-* /opt/HCP-Pipelines && \
